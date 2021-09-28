@@ -1,0 +1,19 @@
+
+type:
+check_every_nth_step: 10_000_000
+
+measure_param_norm: False
+measure_grad_norm: False
+check_momentum: False
+
+internal_batch_size_chunks: 1
+record_gradient_norm_per_batch: False
+compute_gradient_SNR: False
+compute_gradient_noise_scale: False
+
+compute_flatness: False
+flatness_step_size: 0.1
+flatness_threshold: 1.0
+flatness_norm: filter
+
+save_model_every_nth_step:

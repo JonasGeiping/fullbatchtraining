@@ -1,0 +1,14 @@
+
+name: L-BFGS
+
+lr: 1.0
+weight_decay: 5e-4
+
+history_size: 10
+line_search: Wolfe
+eps: 1e-2
+damping: True
+eta: 2
+c1: 1e-4
+c2: 0.9
+max_linesearches: 10

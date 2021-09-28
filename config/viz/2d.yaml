@@ -1,0 +1,35 @@
+# Loss landscape visualization
+type: 2d
+
+# hyper_parameters:
+database_name:  # If none is given, uses the checkpoint name
+rebuild_existing_database: False
+compute_full_loss: True  # This costs extra, as the forward pass cannot be in inference mode and a backward pass has to be made.
+
+
+# Tips for faster loss computation:
+# Use tracing with impl.jit=trace if using the model in eval mode
+# Maybe use AMP??
+
+# Loss computation details:
+ignore_layers: 'biasbn'
+norm: 'filter'  # Options are filter, layer, weight, dfilter, dlayer
+
+coordinates:
+  x:
+    min: -1
+    max:  1
+    num: 51
+  y:
+    min: -1
+    max:  1
+    num: 51
+
+model_eval: True # If false the model is in training and the old buffers will be reloaded?
+
+# DB implementation:
+max_readers: 128
+readahead: True # this should be beneficial for long sequential reads
+meminit: True
+max_spare_txns: 128
+map_size: 1e9

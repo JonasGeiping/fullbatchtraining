@@ -1,0 +1,13 @@
+
+dist: True
+backend: nccl
+strategy: 'file_descriptor'
+world_size: 1 # This is the number of nodes
+rank: 0  # This is "node rank" and should be set to "SLURM" on SLURM systems. dist=True will automatically consume all GPUs on each node.
+url:  tcp://127.0.0.1:29501  # Use env:// on multinode setups
+
+# If the following two settings are not None, they will be propagated to workers and replace environment variables there!
+MASTER_PORT:
+MASTER_ADDR:
+
+# These settings are somewhat redundant as different clusters require different tweaks.

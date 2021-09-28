@@ -1,0 +1,14 @@
+
+name: DenseNet201
+depth: 201
+
+# Architecture specifics:
+stem: CIFAR
+convolution: Standard
+nonlin_fn: ReLU
+normalization: BatchNorm2d
+
+#densenet:
+bn_size: 4
+memory_efficient: False
+drop_rate: 0

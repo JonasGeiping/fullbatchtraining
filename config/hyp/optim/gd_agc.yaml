@@ -1,0 +1,12 @@
+
+name: GD-AGC
+
+lr: 1.6
+momentum: 0.9
+weight_decay: 2e-5
+dampening: 0.0
+nesterov: True
+
+clipping: 0.01
+eps: 1e-3
+

@@ -1,0 +1,19 @@
+
+type: limited
+check_every_nth_step: 1
+
+measure_param_norm: True
+measure_grad_norm: True
+check_momentum: True
+
+internal_batch_size_chunks: 1 # the batches from data.batch_size are chunked into this many pieces, set equal to batch_size for per-example-gradients
+record_gradient_norm_per_batch: False
+compute_gradient_SNR: False # not doing this at every iteration for now
+compute_gradient_noise_scale: False # not doing this at every iteration for now
+
+compute_flatness: False  # Doing this at every iteration will take forever and also possibly break the model
+flatness_step_size: 0.1
+flatness_threshold: 1.0
+flatness_norm: filter
+
+save_model_every_nth_step:

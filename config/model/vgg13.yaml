@@ -1,0 +1,11 @@
+
+name: VGG13
+
+# Architecture specifics:
+head: CIFAR
+
+convolution: Standard
+nonlin_fn: ReLU
+normalization: BatchNorm2d
+drop_rate: 0.0
+classical_weight_init: True

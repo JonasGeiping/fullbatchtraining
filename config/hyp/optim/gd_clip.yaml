@@ -1,0 +1,12 @@
+
+name: Adaptive Gradient Descent
+# This is adaptive gradient descent clipping gradient norms across iterations
+
+lr: 0.1
+momentum: 0.9
+weight_decay: 5e-4
+dampening: 0.0
+nesterov: True
+
+interval: 10
+norm_type: 2

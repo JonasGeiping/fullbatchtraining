@@ -1,0 +1,11 @@
+
+name: nfnet
+
+# Architecture specifics:
+stem: CIFAR
+variant: F0
+stochdepth_rate: 0.0  # 0.25 in original work
+alpha: 0.2
+se_ratio: 0.5
+nonlin: gelu
+use_dropout: False

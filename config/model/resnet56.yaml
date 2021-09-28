@@ -1,0 +1,14 @@
+
+name: ResNet56
+depth: 56
+width: 16
+
+# Architecture specifics:
+stem: CIFAR
+
+convolution: Standard
+nonlin_fn: ReLU
+normalization: BatchNorm2d
+
+downsample: C  #  as in He et al., 2019
+initialization: skip-residual

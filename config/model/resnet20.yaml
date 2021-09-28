@@ -1,0 +1,13 @@
+
+name: ResNet20
+depth: 20
+width: 16
+
+# Architecture specifics:
+stem: CIFAR
+convolution: Standard
+nonlin_fn: ReLU
+normalization: BatchNorm2d
+
+downsample: B
+initialization: skip-residual
