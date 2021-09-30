@@ -1,7 +1,7 @@
-# Training competitive vision models without stochasticity
-This repository implements training routines to train vision models for classification on CIFAR-10 without SGD.
+# Stochastic Training is Not Necessary for Generalization -- Training competitive vision models without stochasticity
+This repository implements training routines to train vision models for classification on CIFAR-10 without SGD as described in our publication https://arxiv.org/abs/2109.14119.
 
-## Publication: Stochastic Training is Not Necessary for Generalization
+## Abstract: 
 It is widely believed that the implicit regularization of SGD is fundamental to the impressive generalization behavior we observe in neural networks.  In this work, we demonstrate that non-stochastic full-batch training can achieve comparably strong performance to SGD on CIFAR-10 using modern architectures.  To this end, we show that the implicit regularization of SGD can be completely replaced with explicit regularization.  Our observations indicate that the perceived difficulty of full-batch training is largely the result of its optimization properties and the disproportionate time and effort spent by the ML community tuning optimizers and hyperparameters for small-batch training.
 
 ## Requirements
