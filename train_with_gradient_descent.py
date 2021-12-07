@@ -24,7 +24,7 @@ def main_process(process_idx, local_group_size, cfg):
     local_time = time.time()
     setup = fullbatch.utils.system_startup(process_idx, local_group_size, cfg)
 
-    trainloader, validloader = fullbatch.data.construct_dataloader(cfg.data, cfg.impl, cfg.dryrun)
+    trainloader, validloader = fullbatch.data.construct_dataloader(cfg.data, cfg.impl, cfg.hyp, cfg.dryrun)
 
     model = fullbatch.models.construct_model(cfg.model, cfg.data.channels, cfg.data.classes)
     model = fullbatch.models.prepare_model(model, cfg, process_idx, setup)
