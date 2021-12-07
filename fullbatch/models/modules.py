@@ -233,8 +233,7 @@ class GradRegularizer():
         vhp = offset_grads  # this is due to the inplace modification and saves one copy
         torch._foreach_div_(vhp, eps_n)
 
-        # repair model parameters inplace by subtracting and hoping for the best with finite precision:
-        # torch._foreach_sub_(list(self.model.parameters()), grad_vec, alpha=eps_n)
+        # repair model parameters
         for param, original_param in zip(self.model.parameters(), original_parameters):
             param.data.copy_(original_param)
 
@@ -268,6 +267,7 @@ class GradRegularizer():
         # evaluate at theta + 0.5 * eps * grad and theta - 0.5 * eps * grad
         # use the darts rule for eps
         correction_factor = self.optimizer.param_groups[0]["lr"] / 4
+        original_parameters = [p.detach().clone() for p in self.model.parameters()]
 
         grad_vec = torch._foreach_mul(grads, self.block_strength)  # This assigns the vector in the vhp
         if pre_grads is not None:
@@ -292,8 +292,9 @@ class GradRegularizer():
         vhp = torch._foreach_sub(xplus_grads, xminus_grads)
         torch._foreach_div_(vhp, eps_n)
 
-        # repair model parameters inplace by subtracting and hoping for the best with finite precision:
-        torch._foreach_add_(list(self.model.parameters()), grad_vec, alpha=0.5 * eps_n)
+        # repair model parameters
+        for param, original_param in zip(self.model.parameters(), original_parameters):
+            param.data.copy_(original_param)
 
         torch._foreach_add_(grads, vhp, alpha=correction_factor)
         return grads

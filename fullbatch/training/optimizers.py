@@ -51,7 +51,7 @@ def optim_interface(model, cfg_hyp):
                 if len(re.findall('stem.*(bias|gain)|conv.*(bias|gain)|skip_gain', group['name'])) > 0:
                     group['weight_decay'] = 0
     else:
-        raise ValueError(f'Invalid optimizer {optimizer} provided.')
+        raise ValueError(f'Invalid optimizer {cfg_hyp.optim.name} provided.')
 
     if cfg_hyp.optim_modification.name == 'none':
         optimizer_to_schedule = optimizer
@@ -84,7 +84,7 @@ def optim_interface(model, cfg_hyp):
     elif cfg_hyp.scheduler in ['', ' ', None]:
         scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer_to_schedule, milestones=[], gamma=1)
     else:
-        raise ValueError(f'Invalid scheduler {scheduler} provided.')
+        raise ValueError(f'Invalid scheduler {cfg_hyp.scheduler} provided.')
 
     if cfg_hyp.warmup > 0:
         scheduler = GradualWarmupScheduler(optimizer_to_schedule, multiplier=1.0,
