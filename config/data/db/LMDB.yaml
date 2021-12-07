@@ -4,11 +4,12 @@ path: "~/data/lmdb"
 
 # writing:
 rebuild_existing_database: False
-augmentations:
+augmentations_train:
   RandomCrop:
     - 32
     - 4
-  RandomHorizontalFlip:
+  RandomHorizontalFlip: 0.5
+augmentations_val:
 normalize: False
 rounds: 10
 write_frequency: 5000 # how often to flush during database creation
@@ -21,3 +22,7 @@ meminit: True
 max_spare_txns: 128
 
 access: get # cursor or get
+
+# Populate some fields from the base data folder
+pixels: ${data.pixels}
+mean: ${data.mean}

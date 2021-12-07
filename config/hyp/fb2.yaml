@@ -1,0 +1,15 @@
+# Fullbatch hyperparameters with longer training
+template_name: fb2
+
+defaults:
+  - _default_hyperparams
+
+# Specialization vs default:
+train_stochastic: False
+shuffle: False
+steps: 3000
+
+optim:
+  lr: 0.4
+warmup: 400
+scheduler: cosine-4000

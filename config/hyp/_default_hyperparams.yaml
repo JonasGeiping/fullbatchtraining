@@ -1,0 +1,56 @@
+# Dataloader implementation choices:
+shuffle: False #  Shuffle data randomly every epoch!
+sample_with_replacement: False # Train with mini-batches drawn WITH replacement, only active if also shuffle=True and if the mode is non-distributed!
+
+train_stochastic: True # flag for mini-batch training sanity check
+train_switch_stochastic: # Switch from stochastic to non-stochastic or vice-versa after this many steps
+train_semi_stochastic: False # flag for sanity check of minibatch training with a different batch of data augmentations drawn from cfg.db.rounds
+
+# Optimization settings
+defaults:
+  - optim: gd
+  - optim_modification: none # LARS, LARC or SAM
+
+steps: 120 # in our full-batch setting this is "steps", but you can think of it as "epochs"
+scheduler: cosine-decay
+stop_at_full_training_accuracy: 0 # stop after seeing this many steps of 100% training accuracy. Set to 0 to disable.
+
+warmup: 5   # If this is an int, then the learning rate will linearly warm up for this many steps
+only_linear_layers_weight_decay: False
+
+# EMA
+evaluate_ema: False  # Use an exponential moving average of the model during evaluation
+eval_ema_momentum: 0.990
+
+# Clipping
+grad_clip: # Clip the full gradient
+batch_clip: # Clip each block/mini-batch of data separately
+grad_clip_norm: 2  # Can also choose 'inf', value will be cast to float by hydra
+
+# Gradient Noise
+grad_noise:
+  additive:
+  multiplicative:
+
+# Gradient Regularization
+grad_reg:
+  norm: 2
+  block_strength: 0.0
+  acc_strength: 0.0
+  eps: 1e-2
+  implementation: forward-differences
+sub_batch: 128 # data points used during a single forward-pass if sub_batch=1 then all examples are processed separately
+# sub_batch is basically the accumulation size of the regularizer
+
+# Loss function modifications
+label_smoothing: 0.0
+loss_modification:
+
+norm_bias:  # This is an external l^p-type norm bias as in Goldblum et al. - best to disable normal weight_decay when using it.
+  strength: 0.0
+  norm_type: 1 # allow 1 or 2-norm
+  bias: 0
+
+# Misc:
+test_time_flips: False # Turn this on to check both horizontal flips at test time and take the average.
+template_name: default

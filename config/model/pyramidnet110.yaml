@@ -1,0 +1,4 @@
+name: pyramidnet110
+depth: 110
+alpha: 84
+bottleneck: False

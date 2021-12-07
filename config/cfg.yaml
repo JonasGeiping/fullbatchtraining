@@ -8,14 +8,10 @@
 
 defaults:
   - data: CIFAR10
-  - data/db: none
   - model: resnet18
 
   - impl: standard
-  - impl/setup: single
-  - hyp: CIFAR10_ResNet18
-  - hyp/optim: gd
-  - hyp/optim_modification: none
+  - hyp: base_sgd
 
 
   - analysis: none

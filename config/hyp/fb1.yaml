@@ -1,0 +1,10 @@
+# Fullbatch hyperparameters with no changes from SGD
+template_name: fb1
+
+defaults:
+  - _default_hyperparams
+
+# Specialization vs default:
+train_stochastic: False
+shuffle: False
+steps: 300

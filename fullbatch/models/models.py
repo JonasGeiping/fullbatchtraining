@@ -8,6 +8,7 @@ from .resnets import ResNet, resnet_depths_to_config
 from .densenets import DenseNet, densenet_depths_to_config
 from .nfnets import NFNet
 from .vgg import VGG
+from .pyramidnets import PyramidNet
 
 
 def construct_model(cfg_model, channels, classes):
@@ -45,6 +46,8 @@ def construct_model(cfg_model, channels, classes):
         model = NFNet(channels, classes, variant=cfg_model.variant, stochdepth_rate=cfg_model.stochdepth_rate,
                       alpha=cfg_model.alpha, se_ratio=cfg_model.se_ratio, activation=cfg_model.nonlin, stem=cfg_model.stem,
                       use_dropout=cfg_model.use_dropout)
+    elif 'pyramidnet' in cfg_model.name:
+        model = PyramidNet(cfg_model.depth, cfg_model.alpha, channels, classes, bottleneck=cfg_model.bottleneck)
 
     return model
 

@@ -26,8 +26,14 @@ def job_startup(main_process, cfg, log, name=None):
         cfg.seed = torch.randint(0, 2**32 - 1, (1,)).item()
 
     ngpus_per_node = torch.cuda.device_count()
-    if cfg.impl.setup.url == "env://" and cfg.impl.setup.world_size == -1:
-        cfg.impl.setup.world_size = int(os.environ["WORLD_SIZE"])
+    if cfg.impl.setup.dist:
+        if cfg.impl.setup.url == "env://" and cfg.impl.setup.world_size == -1:
+            cfg.impl.setup.world_size = int(os.environ["WORLD_SIZE"])
+        # Randomize port in tcp setup
+        if 'tcp://' in cfg.impl.setup.url and '?' in cfg.impl.setup.url:
+            random_port = torch.randint(2000, 65535 - 1, (1,)).item()
+            cfg.impl.setup.url = cfg.impl.setup.url.replace('?', str(random_port))
+
     log.info(OmegaConf.to_yaml(cfg))
     initialize_multiprocess_log(cfg)  # manually save log configuration
 

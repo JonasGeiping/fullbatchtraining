@@ -1,0 +1,21 @@
+# Fullbatch hyperparameters with longer training and clipping
+# and gradient regularization
+template_name: fbgradreg
+
+defaults:
+  - _default_hyperparams
+
+# Specialization vs default:
+train_stochastic: False
+shuffle: False
+steps: 3000
+
+optim:
+  lr: 0.8
+warmup: 400
+scheduler: cosine-4000
+
+grad_clip: 0.25
+
+grad_reg:
+  block_strength: 0.5

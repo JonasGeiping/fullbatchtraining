@@ -266,7 +266,9 @@ def train(model, trainloader, validloader, setup, cfg):
                     else:
                         for param, grad in zip(model.parameters(), grads):
                             param.grad = grad
-                    _modify_gradient_params()
+                    if cfg.hyp.grad_clip is not None:
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.hyp.grad_clip , norm_type=2.0)
+                    # _modify_gradient_params()
                     step_loss += block_loss
                     step_preds += block_correct_preds
                     return step_loss.detach()
@@ -415,3 +417,177 @@ def status_message(optimizer, stats, step):
     msg += f'TRAIN loss {stats["train_loss"][-1]:7.4f} | TRAIN Acc: {stats["train_acc"][-1]:7.2%} |'
     msg += f'VAL loss {_maybe_print("valid_loss"):7.4f} | VAL Acc: {_maybe_print("valid_acc"):7.2%} |'
     return msg
+
+
+
+def _measure_implementation_noise(model, trainloader, validloader, setup, cfg):
+    """Measure FP difference between successive runs. Todo: Make this nice and unify with the main loop."""
+
+    log = get_log(cfg)
+    model.train()
+
+    class Counter:
+        step: int = 0
+
+    optimizer, scheduler = optim_interface(model, cfg.hyp)
+    stats = defaultdict(list)
+    # Optionally: Load checkpoint:
+    if cfg.impl.checkpoint.name is None:
+        print('Could not load checkpoint. Using newly initalized model.')
+        cfg.impl.checkpoint.name = cfg.name
+        file = os.path.join(cfg.original_cwd, 'checkpoints', cfg.impl.checkpoint.name)
+        _save_to_checkpoint(model, optimizer, scheduler, None, Counter, file=file)
+
+    num_blocks = len(trainloader)
+    num_chunks = max(cfg.data.batch_size // cfg.hyp.sub_batch, 1)
+    num_machines = torch.distributed.get_world_size() if torch.distributed.is_initialized() else 1
+    acc_dtype = getattr(torch, cfg.impl.accumulation_dtype)
+
+    loss_fn = get_loss_fn(cfg.hyp, cfg.data.batch_size)
+    gradreg = GradRegularizer(model, optimizer, loss_fn, **cfg.hyp.grad_reg, mixed_precision=False)
+
+    def _compute_batched_gradient(inputs, labels, create_graph=False):
+        with torch.cuda.amp.autocast(enabled=cfg.impl.mixed_precision):
+            outputs = model(inputs)
+            block_loss = loss_fn(outputs, labels)  # the running average takes the number of machines into account
+            block_correct_preds = (outputs.argmax(dim=-1) == labels).float().sum()
+
+        grads = torch.autograd.grad(block_loss, model.parameters(), create_graph=create_graph)
+        return grads, block_loss.detach(), block_correct_preds.detach()
+
+    def _accumulate_full_gradient(trainloader, stats):
+        train_time = time.time()
+        average_grads = [torch.zeros_like(p, dtype=acc_dtype) for p in model.parameters()]
+
+        # The following block precomputes the full gradient to allow for a computation of the GD regularization effect
+        # in addition to the SGD regularization effect
+        # This is usually skipped
+        if cfg.hyp.grad_reg.acc_strength != 0:
+            pre_grads = [torch.zeros_like(p, dtype=acc_dtype) for p in model.parameters()]
+            trainloader.sampler.set_epoch(Counter.step)
+            for block, (inputs, labels) in enumerate(trainloader):
+                inputs = inputs.to(**setup, non_blocking=cfg.impl.non_blocking)
+                labels = labels.to(dtype=torch.long, device=setup['device'], non_blocking=cfg.impl.non_blocking)
+
+                grads, _, _ = _compute_batched_gradient(inputs, labels, create_graph=False)
+                with torch.no_grad():
+                    grads = [g.to(dtype=acc_dtype) for g in grads]
+                    if cfg.hyp.batch_clip is not None:
+                        _clip_gradient_list(grads, cfg.hyp.batch_clip, cfg)
+                    torch._foreach_sub_(grads, pre_grads)
+                    torch._foreach_add_(pre_grads, grads, alpha=1 / (num_machines * num_blocks))
+        else:
+            pre_grads = None
+
+        # Central code block starts here ###############################################################################
+        step_loss, step_preds, datapoints, clipped_batches = 0.0, 0.0, 0, 0
+        grad_norms = torch.zeros(num_chunks * num_blocks, device=setup['device'], dtype=setup['dtype'])
+        trainloader.sampler.set_epoch(Counter.step)
+        for block, (inputs, labels) in enumerate(trainloader):
+            datapoints += labels.shape[0]
+            chunks_in_block = max(labels.shape[0] // cfg.hyp.sub_batch, 1)
+            inputs = inputs.to(**setup, non_blocking=cfg.impl.non_blocking)
+            labels = labels.to(dtype=torch.long, device=setup['device'], non_blocking=cfg.impl.non_blocking)
+
+            # Optionally chunk batches further
+            input_chunks = torch.chunk(inputs, chunks_in_block, dim=0)
+            label_chunks = torch.chunk(labels, chunks_in_block, dim=0)
+
+            for idx, (input_chunk, label_chunk) in enumerate(zip(input_chunks, label_chunks)):
+                grads, chunk_loss, chunk_correct_preds = _compute_batched_gradient(input_chunk, label_chunk,
+                                                                                   create_graph=gradreg.create_graph)
+                grad_norms[block * num_chunks + idx] = torch.stack([g.detach().pow(2).sum() for g in grads]).sum()
+                grads = gradreg(grads, input_chunk, label_chunk, pre_grads)
+                with torch.no_grad():
+                    grads = [g.to(dtype=acc_dtype) for g in grads]
+                    if cfg.hyp.batch_clip is not None:
+                        clipped_batches += _clip_gradient_list(grads, cfg.hyp.batch_clip, cfg)
+                    torch._foreach_sub_(grads, average_grads)
+                    torch._foreach_add_(average_grads, grads, alpha=1 / (num_machines * num_blocks * chunks_in_block))
+                    step_loss += chunk_loss / chunks_in_block
+                    step_preds += chunk_correct_preds
+        # ##############################################################################################################
+
+        # Distribute gradients across multiple machines
+        model.to(dtype=acc_dtype)   # param and param.grad need to share their dtype
+        if torch.distributed.is_initialized():
+            _allreduce_coalesced(model, average_grads)
+        else:
+            for param, grad in zip(model.parameters(), average_grads):
+                param.grad = grad
+
+        return step_loss.detach() / num_blocks
+
+    @torch.no_grad()
+    def _modify_gradient_params():
+        if cfg.hyp.norm_bias.strength > 0.0:
+            param_norm_l2 = sum([p.pow(2).sum() for p in model.parameters()])
+            if cfg.hyp.norm_bias.norm_type == 1:
+                diff_value_sign = (param_norm_l2 - cfg.hyp.norm_bias.bias ** 2).sign()
+                [p.grad.add_(cfg.hyp.norm_bias.strength * diff_value_sign) for p in model.parameters()]
+            else:
+                factor = 2 * (param_norm_l2 - cfg.hyp.norm_bias.bias ** 2)
+                [p.grad.add_(cfg.hyp.norm_bias.strength * factor * p) for p in model.parameters()]
+
+        if cfg.hyp.grad_clip is not None:  # this is full clipping, we could also have block-level clipping
+            if cfg.hyp.grad_clip_norm == float('inf'):
+                grad_norm = max(p.grad.abs().max() for p in model.parameters())
+            else:
+                grad_norm = torch.norm(torch.stack([torch.norm(p.grad, cfg.hyp.grad_clip_norm) for p in model.parameters()]),
+                                       cfg.hyp.grad_clip_norm)
+            stats['preclip_gradnorm'] += [grad_norm.item()]
+            if grad_norm > cfg.hyp.grad_clip:
+                [p.grad.mul_(cfg.hyp.grad_clip / (grad_norm + 1e-6)) for p in model.parameters()]
+                log.info(f'Gradient total norm was {grad_norm}. Clipping to {cfg.hyp.grad_clip}.')
+                stats['clipped_step'] += [1]
+            else:
+                stats['clipped_step'] += [0]
+        if cfg.hyp.grad_noise['additive'] is not None:  # additive noise as in Langevin dynamics or diff. privacy
+            [p.grad.add_(cfg.hyp.grad_noise['additive'] * torch.randn_like(p)) for p in model.parameters()]
+        if cfg.hyp.grad_noise['multiplicative'] is not None:  # multiplicative noise as in Hoffer et al.
+            [p.grad.mul_(1 + cfg.hyp.grad_noise['multiplicative'] * torch.randn_like(p))
+             for p in model.parameters()]
+
+    def gradient_evaluation():
+        """This is a full-blown closure that is passed to the optimizer."""
+        # Gradient evaluation part:
+        model.to(dtype=setup['dtype'])
+        # this may move the model to a different precision
+        loss = _accumulate_full_gradient(trainloader, stats)
+        # Modify gradient:
+        _modify_gradient_params()
+        return loss
+
+    file = os.path.join(cfg.original_cwd, 'checkpoints', cfg.impl.checkpoint.name)
+    _, model_state, _, _, step = torch.load(file, map_location=setup['device'])
+    model.load_state_dict(model_state)
+    model.train()
+    log.info(f'Loaded model checkpoint from step {step} successfully.')
+    loss1 = gradient_evaluation()
+    grads_1 = [p.grad.detach().clone() for p in model.parameters()]
+    print(f'Completed first pass with loss {loss1.item()}.')
+
+    file = os.path.join(cfg.original_cwd, 'checkpoints', cfg.impl.checkpoint.name)
+    _, model_state, _, _, step = torch.load(file, map_location=setup['device'])
+    model.load_state_dict(model_state)
+    model.train()
+    log.info(f'Loaded model checkpoint from step {step} successfully.')
+    loss2 = gradient_evaluation()
+    grads_2 = [p.grad.detach().clone() for p in model.parameters()]
+    print(f'Completed first pass with loss {loss2.item()}.')
+
+    norm_linf = torch.stack([g.max() for g in grads_1]).max()
+    norm_l2 = torch.stack([g.pow(2).sum() for g in grads_1]).sum().sqrt()
+    norm_l1 = torch.stack([g.abs().sum() for g in grads_1]).sum()
+
+    print(f'Gradient Norms | L^Inf: {norm_linf.item()} | L2: {norm_l2.item()} | L1: {norm_l1.item()}.')
+
+    error_linf = torch.stack([(g1 - g2).max() for g1, g2 in zip(grads_1, grads_2)]).max()
+    error_l2 = torch.stack([(g1 - g2).pow(2).sum() for g1, g2 in zip(grads_1, grads_2)]).sum().sqrt()
+    error_l1 = torch.stack([(g1 - g2).abs().sum() for g1, g2 in zip(grads_1, grads_2)]).sum()
+
+    print(f'Error in L^inf Norm: Total: {error_linf.item()} | Relative: {(error_linf / norm_linf).item()}.')
+    print(f'Error in L^2 Norm: Total: {error_l2.item()} | Relative: {(error_l2 / norm_l2).item()}.')
+    print(f'Error in L^1 Norm: Total: {error_l1.item()} | Relative: {(error_l1 / norm_l1).item()}.')
+
+    return

@@ -43,7 +43,7 @@ class LMDBDataset(torch.utils.data.Dataset):
             self.skip_pillow = True
 
         shuffled = 'shuffled' if cfg_db.shuffle_while_writing else ''
-        full_name = name + ''.join([l for l in repr(cfg_db.augmentations) if l.isalnum()]) + f'R{cfg_db.rounds}' + shuffled
+        full_name = name + ''.join([l for l in repr(cfg_db.augmentations_train) if l.isalnum()]) + f'R{cfg_db.rounds}' + shuffled
 
         self.path = os.path.join(os.path.expanduser(cfg_db.path), f'{type(dataset).__name__}_{full_name}.lmdb')
 

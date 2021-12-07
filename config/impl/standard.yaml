@@ -1,8 +1,3 @@
-# Dataloader implementation choices:
-shuffle: False #  Shuffle data randomly every epoch!
-sample_with_replacement: False # Train with mini-batches drawn WITH replacement, only active if also shuffle=True and if the mode is non-distributed!
-
-
 # PyTorch configuration
 dtype: float # this has to be float when mixed_precision is True
 memory: contiguous # channels-last is only really beneficial if mixed_precision is also True, but even then really machine-specific??
@@ -30,4 +25,5 @@ checkpoint:
   save_every_nth_step: 1
 
 # Node Setup
-setup: single
+defaults:
+  - setup: single

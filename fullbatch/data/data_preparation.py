@@ -7,6 +7,7 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 from .datasets import TinyImageNet
+from .auto_augment import rand_augment_transform, augment_and_mix_transform, auto_augment_transform
 
 import os
 from .cached_dataset import CachedDataset
@@ -17,7 +18,7 @@ import warnings
 warnings.filterwarnings("ignore", "(Possibly )?corrupt EXIF data", UserWarning)
 
 
-def construct_dataloader(cfg_data, cfg_impl, dryrun=False):
+def construct_dataloader(cfg_data, cfg_impl, cfg_hyp, dryrun=False):
     """Return a dataloader with given dataset. Choose number of workers and their settings."""
     trainset, validset = _build_dataset(cfg_data, can_download=not cfg_impl.setup.dist)
 
@@ -44,10 +45,10 @@ def construct_dataloader(cfg_data, cfg_impl, dryrun=False):
         num_workers = 0
 
     if cfg_impl.setup.dist:
-        train_sampler = torch.utils.data.DistributedSampler(trainset, shuffle=cfg_impl.shuffle)
+        train_sampler = torch.utils.data.DistributedSampler(trainset, shuffle=cfg_hyp.shuffle)
     else:
-        if cfg_impl.shuffle:
-            train_sampler = torch.utils.data.RandomSampler(trainset, replacement=cfg_impl.sample_with_replacement)
+        if cfg_hyp.shuffle:
+            train_sampler = torch.utils.data.RandomSampler(trainset, replacement=cfg_hyp.sample_with_replacement)
         else:
             train_sampler = torch.utils.data.SequentialSampler(trainset)
 
@@ -78,10 +79,10 @@ def construct_subset_dataloader(dataloader, cfg, step):
     dataset_subset_ids = torch.arange(0, cfg.data.size) + random_idx * cfg.data.size
     dataset = torch.utils.data.Subset(dataloader.dataset, dataset_subset_ids)
     if cfg.impl.setup.dist:
-        sampler = torch.utils.data.DistributedSampler(dataset, shuffle=cfg.impl.shuffle)
+        sampler = torch.utils.data.DistributedSampler(dataset, shuffle=cfg.hyp.shuffle)
     else:
         sampler = torch.utils.data.RandomSampler(
-            dataset) if cfg.impl.shuffle else torch.utils.data.SequentialSampler(dataset)
+            dataset) if cfg.hyp.shuffle else torch.utils.data.SequentialSampler(dataset)
 
         # Patch the sampler to return nothing when set_epoch is called
         def set_epoch(*args, **kwargs):
@@ -139,16 +140,36 @@ def _get_meanstd(dataset):
     return data_mean, data_std
 
 
+def _get_autoaugment(auto_augment, img_size_min=32, mean=(0, 0, 0)):
+    """The auto_augment key could be something like rand-m7-mstd0.5-inc1 """
+    assert isinstance(auto_augment, str)
+    aa_params = dict(
+        translate_const=int(img_size_min * 0.45),
+        img_mean=tuple([min(255, round(255 * x)) for x in mean]),
+    )
+    if auto_augment.startswith('rand'):
+        return rand_augment_transform(auto_augment, aa_params)
+    elif auto_augment.startswith('augmix'):
+        aa_params['translate_pct'] = 0.3
+        return augment_and_mix_transform(auto_augment, aa_params)
+    else:
+        return auto_augment_transform(auto_augment, aa_params)
+
 def _parse_data_augmentations(cfg_data, PIL_only=False):
 
     def _parse_cfg_dict(cfg_dict):
         list_of_transforms = []
         if hasattr(cfg_dict, 'keys'):
             for key in cfg_dict.keys():
-                try:  # ducktype iterable
-                    transform = getattr(transforms, key)(*cfg_dict[key])
-                except TypeError:
-                    transform = getattr(transforms, key)(cfg_dict[key])
+                if key in ['RandAugment', 'AutoAugment', 'AugMix']:
+                    # TIMM implementations
+                    transform = _get_autoaugment(cfg_dict[key], img_size_min=cfg_data.pixels, mean=cfg_data.mean)
+                else:
+                    # Torchvision implementations:
+                    try:  # ducktype iterable
+                        transform = getattr(transforms, key)(*cfg_dict[key])
+                    except TypeError:
+                        transform = getattr(transforms, key)(cfg_dict[key])
                 list_of_transforms.append(transform)
         return list_of_transforms
 

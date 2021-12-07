@@ -1,0 +1,17 @@
+# Fullbatch hyperparameters with longer training and clipping
+template_name: fbclip
+
+defaults:
+  - _default_hyperparams
+
+# Specialization vs default:
+train_stochastic: False
+shuffle: False
+steps: 3000
+
+optim:
+  lr: 0.4
+warmup: 400
+scheduler: cosine-4000
+
+grad_clip: 0.25

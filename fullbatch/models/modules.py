@@ -212,6 +212,7 @@ class GradRegularizer():
         # evaluate at theta + eps * grad
         # use the darts rule for eps
         correction_factor = self.optimizer.param_groups[0]["lr"] / 4
+        original_parameters = [p.detach().clone() for p in self.model.parameters()]
 
         grad_vec = torch._foreach_mul(grads, self.block_strength)  # This assigns the vector in the vhp
         # This is one mem assignment more than the legacy fd, but should be ok on most machines. Use legacy_fd if necessary.
@@ -233,7 +234,9 @@ class GradRegularizer():
         torch._foreach_div_(vhp, eps_n)
 
         # repair model parameters inplace by subtracting and hoping for the best with finite precision:
-        torch._foreach_sub_(list(self.model.parameters()), grad_vec, alpha=eps_n)
+        # torch._foreach_sub_(list(self.model.parameters()), grad_vec, alpha=eps_n)
+        for param, original_param in zip(self.model.parameters(), original_parameters):
+            param.data.copy_(original_param)
 
         torch._foreach_add_(grads, vhp, alpha=correction_factor)
         return grads
