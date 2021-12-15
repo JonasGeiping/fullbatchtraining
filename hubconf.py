@@ -6,7 +6,7 @@ from fullbatch.models.resnets import resnet_depths_to_config, ResNet
 dependencies = ["torch"]
 
 names = ["highreg"]
-url = "https://github.com/jonasgeiping/fullbatchtraining/releases/v1/"
+url = "https://github.com/JonasGeiping/fullbatchtraining/releases/download/v1/"
 model_urls = {
     "final_fbaug_highreg_lr08_resnet18": url + "final_fbaug_highreg_lr08_resnet18" + ".pth",
     "final_fbaug_gradreg_lr08_resnet18": url + "final_fbaug_gradreg_lr08_resnet18" + ".pth",
