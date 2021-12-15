@@ -1,7 +1,7 @@
 # Stochastic Training is Not Necessary for Generalization -- Training competitive vision models without stochasticity
 This repository implements training routines to train vision models for classification on CIFAR-10 without SGD as described in our publication https://arxiv.org/abs/2109.14119.
 
-## Abstract: 
+## Abstract:
 It is widely believed that the implicit regularization of SGD is fundamental to the impressive generalization behavior we observe in neural networks.  In this work, we demonstrate that non-stochastic full-batch training can achieve comparably strong performance to SGD on CIFAR-10 using modern architectures.  To this end, we show that the implicit regularization of SGD can be completely replaced with explicit regularization.  Our observations indicate that the perceived difficulty of full-batch training is largely the result of its optimization properties and the disproportionate time and effort spent by the ML community tuning optimizers and hyperparameters for small-batch training.
 
 ## Requirements
@@ -15,6 +15,19 @@ Pytorch 1.9.* is used for multithreaded persistent workers, `_for_each_`, functi
 ## Training Runs
 
 Scripts for training runs can be found in `train.sh`
+
+## Pretrained Models
+
+While this project is mostly about analysis of models trained in the full batch setting, we do now provide a few model checkpoints. Ideally at some point all experiments of interest from the paper will be downloadadable as checkpoints. We hope this helps further for further empirical analysis of these types of models.
+
+Models can be loaded via `torch.hub` without having to install this repository manually in the following way:
+```
+model = torch.hub.load("jonasgeiping/fullbatchtraining", "resnet18_fbaug_highreg", source="github")  # resnet18 with strong reg. (no shuffle)
+model = torch.hub.load("jonasgeiping/fullbatchtraining", "resnet152_fbaug_highreg", source="github")   # resnet152 with shuffle
+```
+
+All currently available checkpoints can be listed with `torch.hub.list("jonasgeiping/fullbatchtraining")`.
+
 
 ## Guide
 
