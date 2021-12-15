@@ -22,8 +22,8 @@ While this project is mostly about analysis of models trained in the full batch 
 
 Models can be loaded via `torch.hub` without having to install this repository manually in the following way:
 ```
-model = torch.hub.load("jonasgeiping/fullbatchtraining", "resnet18_fbaug_highreg", source="github")  # resnet18 with strong reg. (no shuffle)
-model = torch.hub.load("jonasgeiping/fullbatchtraining", "resnet152_fbaug_highreg", source="github")   # resnet152 with shuffle
+model = torch.hub.load("JonasGeiping/fullbatchtraining", "resnet18_fbaug_highreg", pretrained=True)  # resnet18 with strong reg. (no shuffle)
+model = torch.hub.load("JonasGeiping/fullbatchtraining", "resnet152_fbaug_highreg", pretrained=True)   # resnet152 with shuffle
 ```
 
 All currently available checkpoints can be listed with `torch.hub.list("jonasgeiping/fullbatchtraining")`.
