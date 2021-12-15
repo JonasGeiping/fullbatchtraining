@@ -18,7 +18,7 @@ Scripts for training runs can be found in `train.sh`
 
 ## Pretrained Models
 
-While this project is mostly about analysis of models trained in the full batch setting, we do now provide a few model checkpoints. Ideally at some point all experiments of interest from the paper will be downloadadable as checkpoints. We hope this helps further for further empirical analysis of these types of models.
+While this project is mostly about analysis of models trained in the full batch setting, we do now provide a few model checkpoints. Ideally at some point all experiments of interest from the paper will be downloadadable as checkpoints. We hope this helps with further empirical analysis of these types of models.
 
 Models can be loaded via `torch.hub` without having to install this repository manually in the following way:
 ```
