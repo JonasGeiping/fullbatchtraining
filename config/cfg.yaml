@@ -19,11 +19,14 @@ defaults:
   - override hydra/job_logging: custom
   - _self_
 
+base_dir: outputs
 hydra:
   sweep:
     dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
   run:
     dir: outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  job:
+    chdir: True
 
 seed: # Optional: Set initial seed
 name: # A name for this run [will be used for the summary table]
