@@ -33,7 +33,7 @@ python train_with_gradient_descent.py name=SGD_10_CIFAR hyp=base_sgd data/db=LMD
 # python train_with_gradient_descent.py name=fb_10_highreg_lr08 data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=gradreg data.batch_size=32  # FB strong reg.
 #
 # #40x CIFAR:
-python train_with_gradient_descent.py name=SGD_10_CIFAR data/db=LMDB data.augmentations_train= data.db.rounds=40 hyp=base_sgd hyp.train_semi_stochastic=True
+python train_with_gradient_descent.py name=SGD_40_CIFAR data/db=LMDB data.augmentations_train= data.db.rounds=40 hyp=base_sgd hyp.train_semi_stochastic=True
 #
 # python train_with_gradient_descent.py name=fb_40_1 data/db=LMDB data.augmentations_train= data.db.rounds=40 hyp=fb1
 # python train_with_gradient_descent.py name=fb_40_2 data/db=LMDB data.augmentations_train= data.db.rounds=40 hyp=fb2
