@@ -29,11 +29,11 @@ python train_with_gradient_descent.py name=fbaug_highreg_lr08_shuffle_resnet50 h
 # 10x CIFAR:
 # python train_with_gradient_descent.py name=SGD_10_CIFAR hyp=base_sgd data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp.train_semi_stochastic=True # Baseline SGD
 
-python train_with_gradient_descent.py name=fb_10_1 data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=fb1 impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=3 impl.setup.url=env:// impl.checkpoint.name=fb_10_1
-python train_with_gradient_descent.py name=fb_10_2 data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=fb2 impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=3 impl.setup.url=env:// impl.checkpoint.name=fb_10_2
-python train_with_gradient_descent.py name=fb_10_clip data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=fbclip impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=3 impl.setup.url=env:// impl.checkpoint.name=fb_10_clip
-python train_with_gradient_descent.py name=fb_10_gradreg_lr08 data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=gradreg  impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=3 impl.setup.url=env:// impl.checkpoint.name=fb_10_gradreg_lr08
-python train_with_gradient_descent.py name=fb_10_highreg_lr08 data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=gradreg data.batch_size=32   impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=3 impl.setup.url=env:// impl.checkpoint.name=fb_10_highreg_lr08
+# python train_with_gradient_descent.py name=fb_10_1 data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=fb1 impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=1 impl.setup.url=env:// impl.checkpoint.name=fb_10_1
+# python train_with_gradient_descent.py name=fb_10_2 data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=fb2 impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=1 impl.setup.url=env:// impl.checkpoint.name=fb_10_2
+# python train_with_gradient_descent.py name=fb_10_clip data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=fbclip impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=1 impl.setup.url=env:// impl.checkpoint.name=fb_10_clip
+# python train_with_gradient_descent.py name=fb_10_gradreg_lr08 data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=gradreg  impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=1 impl.setup.url=env:// impl.checkpoint.name=fb_10_gradreg_lr08
+# python train_with_gradient_descent.py name=fb_10_highreg_lr08 data/db=LMDB data.augmentations_train= data.db.rounds=10 hyp=gradreg data.batch_size=32   impl/setup=distributed impl.setup.rank=SLURM impl.setup.world_size=1 impl.setup.url=env:// impl.checkpoint.name=fb_10_highreg_lr08
 
 #40x CIFAR:
 # python train_with_gradient_descent.py name=SGD_10_CIFAR data/db=LMDB data.augmentations_train= data.db.rounds=40 hyp=base_sgd hyp.train_semi_stochastic=True
