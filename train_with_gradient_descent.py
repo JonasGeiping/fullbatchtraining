@@ -11,13 +11,14 @@ import logging
 import fullbatch
 
 import os
+
 os.environ["HYDRA_FULL_ERROR"] = "1"
 log = logging.getLogger(__name__)
 
 
-@hydra.main(config_path="config", config_name="cfg")
+@hydra.main(config_path="config", config_name="cfg", version_base="1.1")
 def main_launcher(cfg):
-    fullbatch.utils.job_startup(main_process, cfg, log, 'full-batch computation')
+    fullbatch.utils.job_startup(main_process, cfg, log, "full-batch computation")
 
 
 def main_process(process_idx, local_group_size, cfg):
@@ -28,8 +29,6 @@ def main_process(process_idx, local_group_size, cfg):
 
     model = fullbatch.models.construct_model(cfg.model, cfg.data.channels, cfg.data.classes)
     model = fullbatch.models.prepare_model(model, cfg, process_idx, setup)
-
-
 
     stats = fullbatch.training.train(model, trainloader, validloader, setup, cfg)
 

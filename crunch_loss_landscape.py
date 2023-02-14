@@ -15,13 +15,14 @@ import logging
 import fullbatch
 
 import os
+
 os.environ["HYDRA_FULL_ERROR"] = "1"
 log = logging.getLogger(__name__)
 
 
-@hydra.main(config_path="config", config_name="cfg")
+@hydra.main(config_path="config", config_name="cfg", version_base="1.1")
 def main_launcher(cfg):
-    fullbatch.utils.job_startup(main_process, cfg, log, 'loss landscape visualization')
+    fullbatch.utils.job_startup(main_process, cfg, log, "loss landscape visualization")
 
 
 def main_process(process_idx, local_group_size, cfg):

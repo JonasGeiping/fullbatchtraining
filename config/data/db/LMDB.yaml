@@ -5,15 +5,21 @@ path: "~/data/lmdb"
 # writing:
 rebuild_existing_database: False
 augmentations_train:
-  RandomCrop:
-    - 32
-    - 4
-  RandomHorizontalFlip: 0.5
+    RandomCrop:
+      - 32
+      - 4
+    RandomHorizontalFlip: 0.5
 augmentations_val:
 normalize: False
-rounds: 10
-write_frequency: 5000 # how often to flush during database creation
-shuffle_while_writing: False
+
+# Replication settings
+rounds: 1
+first_round_clean: False # no augmentations in the first round. This way we are strictly extending the dataset
+
+# Writing:
+write_frequency: 65536 # how often to flush during database creation
+shuffle_while_writing: True
+temporary_database: False # Create unique LMDB and delete directly after use
 
 # reading:
 max_readers: 128
